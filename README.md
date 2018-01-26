@@ -1,2 +1,2 @@
 # Sudoku_Scanner
-Capture the sudoku grid from the image and then solve the puzzle using opencv.
+Capture the sudoku grid from the image using opencv and then solve the puzzle.
