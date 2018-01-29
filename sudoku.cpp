@@ -3,12 +3,18 @@
 #include <iostream>
 #include <dirent.h>
 #include "sudokusolver.h"
+#include "sudoku.h"
 
 using namespace cv;  
 using namespace std;
 using namespace ml;
 
-Mat preproces(Mat image)
+sudoku::sudoku()
+{
+
+}
+
+Mat sudoku::preproces(Mat image)
 {
 	GaussianBlur(image, image, Size(9, 9), 0, 0); // to smooth image before thresholding
 
@@ -21,7 +27,7 @@ Mat preproces(Mat image)
 	return box;
 }
 
-Mat outer_box(Mat box, Mat image)
+Mat sudoku::outer_box(Mat box, Mat image)
 {
 	vector< vector<Point> > contours;// contan all the countours with their points
 	vector<Vec4i> hierarchy;//
@@ -73,7 +79,7 @@ Mat outer_box(Mat box, Mat image)
     }
     imshow("temp", image);
 }*/
-vector<Mat> small_box(Mat box)
+vector<Mat> sudoku::small_box(Mat box)
 {
 	vector<Mat> small_boxs;
 	double small = box.rows/9.0;
@@ -89,7 +95,8 @@ vector<Mat> small_box(Mat box)
 	}
 	return small_boxs;
 }
-Ptr<KNearest> train_data()
+
+Ptr<KNearest> sudoku::train_data()
 {
 	int tot_image = 775, counter = 0;
 	Mat trainData = Mat(Size(256, tot_image), CV_32FC1);
@@ -99,10 +106,11 @@ Ptr<KNearest> train_data()
 	{
 		DIR *dir;
 		dirent *ent;
-		char images_dir[] = "digits3/";
+		char images_dir[] = "digit_pics/";
 		char path[255];
 
 		sprintf(path, "%s/%d", images_dir, i);
+		namedWindow("temp", CV_WINDOW_NORMAL);
 
 		dir = opendir(path);
 		if(dir != NULL)
@@ -117,6 +125,7 @@ Ptr<KNearest> train_data()
 					temp = path + temp;
 
 					Mat Ds_img = imread(temp);
+
 					cvtColor(Ds_img, Ds_img, CV_BGR2GRAY);
 					threshold(Ds_img, Ds_img, 200, 255, THRESH_OTSU);
 					Ds_img.convertTo(Ds_img, CV_32FC1,1.0/255.0);
@@ -145,7 +154,7 @@ Ptr<KNearest> train_data()
 	 return kclassifier;
 }
 
-void solve(vector<Mat> small_boxs, Ptr<KNearest> kclassifier)
+void sudoku::solve(vector<Mat> small_boxs, Ptr<KNearest> kclassifier)
 {
 	Mat temp_image =Mat(Size(256, 1), CV_32FC1);
 	int grid[9][9];
@@ -175,25 +184,4 @@ void solve(vector<Mat> small_boxs, Ptr<KNearest> kclassifier)
 	obj->showBoard(grid);
 	else
 	cout << "invalid sudoku\n";
-}
-int main()
-{
-	Mat image = imread("index.jpg", IMREAD_GRAYSCALE);
-	if(image.empty())
-	{
-		cout << "Cannot read the image\n";
-		return -1;
-	}
-
-
-	Mat box = preproces(image);
-
-	vector<Mat> small_boxs = small_box(box);
-
-	Ptr<KNearest> kclassifier = train_data();
-
-	solve(small_boxs, kclassifier);
-
-
-	return 0;
 }
